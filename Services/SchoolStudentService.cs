@@ -1,39 +1,82 @@
-﻿using NewCRUDAPI.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using NewCRUDAPI.Data;
+using NewCRUDAPI.Dtos;
+using NewCRUDAPI.Models;
 
 namespace NewCRUDAPI.Services
 {
-    public class SchoolStudentService : ISchoolStudentService
+    public class SchoolStudentService(ApplicationDbContext context) : ISchoolStudentService
     {
-        static List<Student> students = new List<Student>
-        {
-            new Student { Id = 1, Name = "Mike", Age = 20, Email = "mike@gmail.com" },
-            new Student { Id = 2, Name = "Leah", Age = 25, Email = "leah@gmail.com" },
-            new Student { Id = 3, Name = "Tristan", Age = 24, Email = "leah@gmail.com" }
 
-        };
-
-        public Task<Student> AddStudentAsync(Student student)
+        public async Task<GetStudentDto> AddStudentAsync(CreateStudentRequest student)
         {
-            throw new NotImplementedException();
+            var newStudent = new Student
+            {
+                Name = student.Name,
+                Age = student.Age,
+                Email = student.Email
+            };
+
+            context.Students.Add(newStudent);
+            await context.SaveChangesAsync();
+
+            return new GetStudentDto
+            {
+                Id = newStudent.Id,
+                Name = newStudent.Name,
+                Age = newStudent.Age,
+                Email = newStudent.Email
+            };
         }
 
-        public Task<bool> DeleteStudentAsync(int id)
+        public async Task<bool> DeleteStudentAsync(int id)
         {
-            throw new NotImplementedException();
+            var deleteStudent = context.Students.Find(id);
+            if (deleteStudent == null)
+            {
+                return false;
+            }
+            context.Students.Remove(deleteStudent);
+            await context.SaveChangesAsync();
+            return true;
         }
 
-        public async Task<List<Student>> GetAllStudentsAsync()
-            => await Task.FromResult(students);
+        public async Task<List<GetStudentDto>> GetAllStudentsAsync()
+            => await context.Students.Select(c => new GetStudentDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Age = c.Age,
+                Email = c.Email
+            }).ToListAsync();
 
-        public async Task<Student?> GetStudentByIdAsync(int id)
+        public async Task<GetStudentDto?> GetStudentByIdAsync(int id)
         {
-            var result = students.FirstOrDefault(s => s.Id == id);
-            return await Task.FromResult(result);
+            var result = await context.Students.Where(c=> c.Id == id).Select(c => new GetStudentDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Age = c.Age,
+                Email = c.Email
+            }).FirstOrDefaultAsync();
+
+            return result;
         }
 
-        public Task<bool> UpdateStudentAsync(int id, Student student)
+        public async Task<bool> UpdateStudentAsync(int id, UpdateStudentRequest student)
         {
-            throw new NotImplementedException();
+            var existingStudent = await context.Students.FindAsync(id);
+            if (existingStudent == null)
+            {
+                return false;
+            }
+            existingStudent.Name = student.Name;
+            existingStudent.Age = student.Age;
+            existingStudent.Email = student.Email;
+
+            await context.SaveChangesAsync();
+            return true;
         }
+
     }
 }

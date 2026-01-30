@@ -1,6 +1,6 @@
-﻿namespace NewCRUDAPI.Models
+﻿namespace NewCRUDAPI.Dtos
 {
-    public class Student
+    public class UpdateStudentRequest
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
